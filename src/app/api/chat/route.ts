@@ -7,18 +7,13 @@ export async function POST(req: Request) {
 
     if (!apiKey || !projectId) {
       return NextResponse.json(
-        {
-          error: "Missing env vars",
-          missing: {
-            CUSTOMGPT_API_KEY: !apiKey,
-            CUSTOMGPT_AGENT_ID: !projectId,
-          },
-        },
+        { error: "Missing environment variables" },
         { status: 500 }
       );
     }
 
     const body = await req.json();
+
     const prompt =
       body?.message?.parts
         ?.filter((p: any) => (p.type ?? "text") === "text")
@@ -28,40 +23,39 @@ export async function POST(req: Request) {
 
     if (!prompt) {
       return NextResponse.json(
-        { error: "No prompt found in request body" },
+        { error: "No prompt provided" },
         { status: 400 }
       );
     }
 
-    const res = await fetch("https://api.customgpt.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        project_id: projectId,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
+    const response = await fetch(
+      "https://api.customgpt.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          project_id: projectId,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      }
+    );
 
-    const raw = await res.text();
+    const data = await response.text();
 
-    if (!res.ok) {
+    if (!response.ok) {
       return NextResponse.json(
-        { error: "CustomGPT request failed", status: res.status, body: raw },
+        { error: "CustomGPT error", details: data },
         { status: 502 }
       );
     }
 
-    try {
-      return NextResponse.json(JSON.parse(raw));
-    } catch {
-      return NextResponse.json({ ok: true, raw });
-    }
-  } catch (err: any) {
+    return NextResponse.json(JSON.parse(data));
+  } catch (error: any) {
     return NextResponse.json(
-      { error: err?.message ?? "Unknown server error" },
+      { error: error.message || "Server error" },
       { status: 500 }
     );
   }
