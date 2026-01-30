@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const res = await fetch("https://api.customgpt.ai/api/v1/chat/completions", {
+const res = await fetch("https://app.customgpt.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
