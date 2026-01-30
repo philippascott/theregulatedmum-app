@@ -48,14 +48,17 @@ export async function POST(req: Request) {
   }
 
   try {
-const res = await fetch("https://app.customgpt.ai/api/v1/chat/completions", {
+    const url = `https://app.customgpt.ai/api/v1/projects/${encodeURIComponent(
+      projectId
+    )}/chat/completions`;
+
+    const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        project_id: projectId,
         messages: [{ role: "user", content: prompt }],
       }),
     });
