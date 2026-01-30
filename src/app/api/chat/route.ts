@@ -12,7 +12,16 @@ export async function POST(req: Request) {
       );
     }
 
-    const body = await req.json();
+let body: any = {};
+try {
+  body = await req.json();
+} catch {
+  return NextResponse.json(
+    { error: "Request body must be valid JSON" },
+    { status: 400 }
+  );
+}
+
 
     const prompt =
       body?.message?.parts
