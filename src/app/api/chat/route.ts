@@ -62,10 +62,15 @@ try {
     }
 
     return NextResponse.json(JSON.parse(data));
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Server error" },
-      { status: 500 }
-    );
-  }
+} catch (err: any) {
+  return NextResponse.json(
+    {
+      error: "fetch failed",
+      name: err?.name,
+      message: err?.message,
+      cause: err?.cause ? String(err.cause) : undefined,
+      stack: err?.stack,
+    },
+    { status: 500 }
+  );
 }
