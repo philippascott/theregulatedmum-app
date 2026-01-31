@@ -2,6 +2,9 @@ import { NextRequest } from "next/server";
 import Stripe from "stripe";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export const config = {
   api: {
     bodyParser: false,
