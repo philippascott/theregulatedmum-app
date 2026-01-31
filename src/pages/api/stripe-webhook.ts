@@ -8,9 +8,7 @@ export const config = {
   },
 };
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: "2024-06-20",
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 // Helper to read raw body safely in Vercel
 async function readRawBody(req: any): Promise<Buffer> {
