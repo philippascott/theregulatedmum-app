@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 const Stripe = require("stripe");
-const { createSupabaseAdminClient } = require("../src/lib/supabaseAdmin");
+const { createSupabaseAdminClient } = require("../../lib/supabaseAdmin");
 
 export const config = {
   api: {
