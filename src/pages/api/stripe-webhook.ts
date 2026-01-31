@@ -33,7 +33,6 @@ export default async function handler(
   const buf = await readRawBody(req);
 
   let event;
-
   try {
     event = stripe.webhooks.constructEvent(
       buf,
@@ -53,6 +52,11 @@ export default async function handler(
   ) {
     const subscription = event.data.object as Stripe.Subscription;
     const customerId = subscription.customer as string;
+    const subscriptionId = subscription.id;
+    const subscriptionStatus = subscription.status;
+    const currentPeriodEnd = new Date(
+      subscription.current_period_end * 1000
+    ).toISOString();
 
     const customer = await stripe.customers.retrieve(customerId);
     const email =
@@ -61,17 +65,27 @@ export default async function handler(
         : null;
 
     if (email) {
-      const status = subscription.status === "active" ? "active" : "inactive";
+      const dataToWrite = {
+        email,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscriptionId,
+        subscription_status: subscriptionStatus,
+        current_period_end: currentPeriodEnd,
+      };
 
-      await supabase
+      console.log("📦 Writing to Supabase:", dataToWrite);
+
+      const { error } = await supabase
         .from("GHL_Subscription")
-        .upsert(
-          {
-            email,
-            status,
-          },
-          { onConflict: "email" }
-        );
+        .upsert(dataToWrite, { onConflict: "email" });
+
+      if (error) {
+        console.error("❌ Supabase error:", error);
+      } else {
+        console.log("✅ Successfully wrote to Supabase");
+      }
+    } else {
+      console.warn("⚠️ No email found for customer", customerId);
     }
   }
 
