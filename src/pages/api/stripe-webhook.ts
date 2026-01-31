@@ -54,8 +54,11 @@ export default async function handler(
     const customerId = subscription.customer as string;
     const subscriptionId = subscription.id;
     const subscriptionStatus = subscription.status;
+
+    // Type assertion for current_period_end
+    const subscriptionData = subscription as any;
     const currentPeriodEnd = new Date(
-      subscription.current_period_end * 1000
+      subscriptionData.current_period_end * 1000
     ).toISOString();
 
     const customer = await stripe.customers.retrieve(customerId);
