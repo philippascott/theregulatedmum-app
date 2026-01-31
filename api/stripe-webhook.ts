@@ -1,6 +1,5 @@
-export default async function handler(req, res) {
- console.log("👂 Stripe webhook received");
-  import { buffer } from "micro";
+import type { NextApiRequest, NextApiResponse } from "next";
+import { buffer } from "micro";
 import Stripe from "stripe";
 import { createSupabaseAdminClient } from "../src/lib/supabaseAdmin";
 
@@ -12,7 +11,12 @@ export const config = {
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-export default async function handler(req, res) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  console.log("👂 Stripe webhook received");
+
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
   }
@@ -25,10 +29,10 @@ export default async function handler(req, res) {
   try {
     event = stripe.webhooks.constructEvent(
       buf,
-      sig,
+      sig!,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (err) {
+  } catch (err: any) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -38,11 +42,14 @@ export default async function handler(req, res) {
     event.type === "customer.subscription.created" ||
     event.type === "customer.subscription.updated"
   ) {
-    const subscription = event.data.object;
-    const customerId = subscription.customer;
+    const subscription = event.data.object as Stripe.Subscription;
+    const customerId = subscription.customer as string;
 
     const customer = await stripe.customers.retrieve(customerId);
-    const email = customer.email;
+    const email =
+      typeof customer === "object" && "email" in customer
+        ? customer.email
+        : null;
 
     if (email) {
       const status = subscription.status === "active" ? "active" : "inactive";
@@ -50,11 +57,14 @@ export default async function handler(req, res) {
       await supabase
         .from("GHL_Subscription")
         .upsert(
-          { email, status },
+          {
+            email,
+            status,
+          },
           { onConflict: "email" }
         );
     }
   }
 
-  res.status(200).send("OK");
+  return res.status(200).send("OK");
 }
