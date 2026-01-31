@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { buffer } from "micro";
 import Stripe from "stripe";
 import { createSupabaseAdminClient } from "../src/lib/supabaseAdmin";
 
@@ -10,6 +9,15 @@ export const config = {
 };
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+// Helper to read raw body safely in Vercel
+async function readRawBody(req: any): Promise<Buffer> {
+  const chunks: Uint8Array[] = [];
+  for await (const chunk of req) {
+    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+  }
+  return Buffer.concat(chunks);
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -22,7 +30,7 @@ export default async function handler(
   }
 
   const sig = req.headers["stripe-signature"];
-  const buf = await buffer(req);
+  const buf = await readRawBody(req);
 
   let event;
 
