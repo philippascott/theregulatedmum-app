@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-const Stripe = require("stripe");
-const { createSupabaseAdminClient } = require("../../lib/supabaseAdmin");
+import Stripe from "stripe";
+import { createSupabaseAdminClient } from "../../lib/supabaseAdmin";
 
 export const config = {
   api: {
@@ -8,7 +8,9 @@ export const config = {
   },
 };
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: "2024-06-20",
+});
 
 // Helper to read raw body safely in Vercel
 async function readRawBody(req: any): Promise<Buffer> {
@@ -37,10 +39,11 @@ export default async function handler(
   try {
     event = stripe.webhooks.constructEvent(
       buf,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
+      sig as string,
+      process.env.STRIPE_WEBHOOK_SECRET as string
     );
   } catch (err: any) {
+    console.error("❌ Webhook signature error:", err);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -50,13 +53,13 @@ export default async function handler(
     event.type === "customer.subscription.created" ||
     event.type === "customer.subscription.updated"
   ) {
-    const subscription = event.data.object;
-    const customerId = subscription.customer;
+    const subscription = event.data.object as Stripe.Subscription;
+    const customerId = subscription.customer as string;
 
     const customer = await stripe.customers.retrieve(customerId);
     const email =
       typeof customer === "object" && "email" in customer
-        ? customer.email
+        ? (customer.email as string | null)
         : null;
 
     if (email) {
