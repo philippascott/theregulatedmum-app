@@ -1,15 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import Stripe from "stripe";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2020-08-27",
+});
 
 export async function POST(req: NextRequest) {
   const sig = req.headers.get("stripe-signature");
-  if (!sig) return new NextResponse("Missing signature", { status: 400 });
+  if (!sig) return new Response("Missing signature", { status: 400 });
 
   const rawBody = await req.text();
 
@@ -21,7 +26,7 @@ export async function POST(req: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err) {
-    return new NextResponse("Webhook Error", { status: 400 });
+    return new Response("Webhook Error", { status: 400 });
   }
 
   const supabase = createSupabaseAdminClient();
@@ -54,5 +59,5 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return new NextResponse("OK", { status: 200 });
+  return new Response("OK", { status: 200 });
 }
