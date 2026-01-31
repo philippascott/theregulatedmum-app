@@ -1,4 +1,6 @@
-import { buffer } from "micro";
+export default async function handler(req, res) {
+ console.log("👂 Stripe webhook received");
+  import { buffer } from "micro";
 import Stripe from "stripe";
 import { createSupabaseAdminClient } from "../src/lib/supabaseAdmin";
 
