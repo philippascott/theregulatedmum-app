@@ -10,7 +10,6 @@ export const config = {
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
-// Helper to read raw body safely in Vercel
 async function readRawBody(req: any): Promise<Buffer> {
   const chunks: Uint8Array[] = [];
   for await (const chunk of req) {
@@ -55,11 +54,13 @@ export default async function handler(
     const subscriptionId = subscription.id;
     const subscriptionStatus = subscription.status;
 
-    // Type assertion for current_period_end
     const subscriptionData = subscription as any;
     const currentPeriodEnd = new Date(
       subscriptionData.current_period_end * 1000
     ).toISOString();
+
+    // Get product ID from the first subscription item
+    const productId = subscription.items.data[0]?.price.product as string;
 
     const customer = await stripe.customers.retrieve(customerId);
     const email =
@@ -74,6 +75,7 @@ export default async function handler(
         stripe_subscription_id: subscriptionId,
         subscription_status: subscriptionStatus,
         current_period_end: currentPeriodEnd,
+        product_id: productId,
       };
 
       console.log("📦 Writing to Supabase:", dataToWrite);
