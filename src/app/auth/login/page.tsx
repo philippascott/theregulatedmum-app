@@ -34,15 +34,14 @@ export default function LoginPage() {
       }
 
       // Check if user has active subscription
-      const { data: subscription } = await supabase
+      const { data: subscription, error: subError } = await supabase
         .from('GHL_Subscription')
         .select('*')
         .eq('email', email)
-        .eq('subscription_status', 'active')
-        .or('subscription_status.eq.trialing')
+        .in('subscription_status', ['active', 'trialing'])
         .single();
 
-      if (!subscription) {
+      if (subError || !subscription) {
         setError('No active subscription found. Please upgrade to access the chatbot.');
         setLoading(false);
         return;
