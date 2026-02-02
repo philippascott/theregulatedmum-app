@@ -22,34 +22,65 @@ export default function LoginPage() {
     setError('');
 
     try {
+      console.log('🔐 Attempting login with:', email);
+
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
+      console.log('Auth result:', { data, signInError });
+
       if (signInError) {
+        console.error('❌ Auth error:', signInError.message);
         setError(signInError.message);
         setLoading(false);
         return;
       }
 
-      // Check if user has active subscription
+      console.log('✅ Auth successful, checking subscription...');
+
       const { data: subscription, error: subError } = await supabase
         .from('GHL_Subscription')
         .select('*')
-        .eq('email', email)
-        .in('subscription_status', ['active', 'trialing'])
-        .single();
+        .eq('email', email);
 
-      if (subError || !subscription) {
+      console.log('Subscription query result:', { subscription, subError });
+
+      if (subError) {
+        console.error('❌ Query error:', subError);
+        setError('Database error. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      if (!subscription || subscription.length === 0) {
+        console.error('❌ No subscription found for:', email);
+        setError('No subscription found. Please upgrade to access the chatbot.');
+        setLoading(false);
+        return;
+      }
+
+      const activeSubscription = subscription.find(
+        (s: any) => s.subscription_status === 'active' || s.subscription_status === 'trialing'
+      );
+
+      console.log('Active subscription:', activeSubscription);
+
+      if (!activeSubscription) {
+        console.error('❌ No active/trialing subscription found');
         setError('No active subscription found. Please upgrade to access the chatbot.');
         setLoading(false);
         return;
       }
 
+      console.log('✅ All checks passed, redirecting to chat');
       router.push('/chat');
     } catch (err) {
+      console.error('❌ Unexpected error:', err);
       setError('An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
